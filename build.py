@@ -22,6 +22,7 @@ if not _WIN32:
 rewind = False
 
 def main():
+	# barriers
 	if not sys.maxsize > 2**32:
 		raise NotImplementedError("A 64-bit Python build is required to build TruFont.")
 	if sys.version_info < _min:
@@ -30,6 +31,10 @@ def main():
 		import pyqtdeploy
 	except ImportError:
 		raise NotImplementedError("pyqtdeploy is required to build TruFont.")
+	if shutil.which("qmake") is None:
+		# TODO: we could build as part of this script
+		raise NotImplementedError("qmake is required to build TruFont. Add Qt bin/ directory to PATH!")
+	# go
 	if rewind:
 		if os.path.exists("root"):
 			logger.info("Deleting root directory…")

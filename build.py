@@ -72,7 +72,7 @@ def main():
 				if req.startswith("pyqt5"):
 					continue
 				logger.info("Fetching %s (%s)…", *req.split("=="))
-				subprocess.check_call(["pip"+_suffix, "install", "--no-deps", "--target", "modules", req])
+				subprocess.check_call(["pip"+_suffix, "install", "--target", "modules", req])
 	# go
 	logger.info("Now calling build-sysroot.py. See ya later!")
 	args = ["python"+_suffix, "build-sysroot.py", "--build", "python", "pyqt5", "sip", "--sysroot=root"]

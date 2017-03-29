@@ -29,7 +29,7 @@ def main():
 	if not sys.maxsize > 2**32:
 		raise NotImplementedError("A 64-bit Python build is required to build TruFont.")
 	if sys.version_info < _min:
-		raise NotImplementedError("Python {}+ is required to build TruFont.".format(".".join(_min)))
+		raise NotImplementedError("Python {}+ is required to build TruFont.".format(".".join(str(n) for n in _min)))
 	try:
 		import pyqtdeploy
 	except ImportError:
@@ -60,32 +60,36 @@ def main():
 				name = name.replace(".tgz", ".tar.gz")
 			logger.info("Fetching %s…", name)
 			urllib.request.urlretrieve(url, os.path.join("root/src", name))
-	# download modules
+	# build the sysroot
+	logger.info("Now calling build-sysroot.py. See ya later!")
+	args = [sys.executable, "build-sysroot.py", "--build", "python", "pyqt5", "sip", "--enable-dynamic-loading", "--sysroot=root"]
+	if _WIN32:
+		del args[3]
+		args.append("--use-system-python=3.6")
+	subprocess.check_call(args)
+	targetPython = os.path.join(sysroot, "bin/python")
+	# download modules with the interpreter we built
 	if rewindModules:
 		if os.path.exists("modules"):
 			logger.info("Deleting modules directory…")
 			shutil.rmtree("modules")
 		logger.info("Creating modules directory…")
 		os.mkdir("modules")
+		subprocess.check_call([targetPython, "-m", "ensurepip"])
 		with open("trufont/requirements.txt") as requirements:
 			for req in requirements.readlines():
 				if req.startswith("pyqt5"):
 					continue
 				logger.info("Fetching %s (%s)…", *req.split("=="))
-				subprocess.check_call(["pip"+_suffix, "install", "--target", "modules", req])
-	# go
-	logger.info("Now calling build-sysroot.py. See ya later!")
-	args = ["python"+_suffix, "build-sysroot.py", "--build", "python", "pyqt5", "sip", "--sysroot=root"]
-	if _WIN32:
-		args.remove("python")
-		args.append("--use-system-python=3.6")
-	subprocess.check_call(args)
+				subprocess.check_call([targetPython, "-m", "pip", "install", "--target", "modules", req])
+	# run pyqtdeploy
 	logger.info("Now running pyqtdeploy. Later holmes!")
 	env = dict(os.environ)
 	env["SYSROOT"] = os.path.join(os.getcwd(), "root")
 	subprocess.check_call(["pyqtdeploycli", "--verbose", "--output", "dist", "--project", "TruFont.pdy", "build"], env=env)
 	logger.info("Now running qmake. Almost there!")
 	os.chdir("dist")
+	# finish with qmake and make
 	subprocess.check_call(["qmake"])
 	logger.info("Now running make. Hang on…")
 	subprocess.check_call([_prefix+"make"])

@@ -1,0 +1,3 @@
+[submodule "trufont"]
+	path = trufont
+	url = https://github.com/trufont/trufont.git

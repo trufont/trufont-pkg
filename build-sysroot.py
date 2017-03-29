@@ -284,7 +284,10 @@ class Host:
     def qmake(self):
         """ The name of the qmake executable including any path. """
 
-        return os.path.join(self.sysroot.bin_dir, self.exe('qmake'))
+        bin = os.path.join(self.sysroot.bin_dir, self.exe('qmake'))
+        if not os.path.exists(bin):
+            bin = shutil.which('qmake')
+        return bin
 
     @property
     def qt_version(self):

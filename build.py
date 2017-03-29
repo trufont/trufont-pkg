@@ -68,8 +68,8 @@ def main():
 		os.mkdir("modules")
 		subprocess.check_call(["pip"+_suffix, "download"])
 		with open("trufont/requirements.txt") as requirements:
-			for req in requirements.lines():
-				if req.beginswith("pyqt5"):
+			for req in requirements.readlines():
+				if req.startswith("pyqt5"):
 					continue
 				logger.info("Fetching %s (%s)…", *req.split("=="))
 				subprocess.check_call(["pip", "download", "--dest", "modules", req])

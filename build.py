@@ -20,8 +20,8 @@ PACKAGES = [
 if not _WIN32:
 	PACKAGES.append(r"https://www.python.org/ftp/python/3.6.1/Python-3.6.1.tgz")
 
-rewind = False
-rewindModules = False
+rewind = True
+rewindModules = True
 
 def main():
 	# barriers

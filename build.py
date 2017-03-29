@@ -40,7 +40,7 @@ def main():
 	version = subprocess.check_output([qmake, "-v"])
 	if b"Qt version 5.8" not in version:
 		raise NotImplementedError("Qt 5.8 is required to build TruFont.")
-	# go
+	# download build libs
 	if rewind:
 		if os.path.exists("root"):
 			logger.info("Deleting root directory…")
@@ -59,30 +59,32 @@ def main():
 				name.replace(".tgz", ".tar.gz")
 			logger.info("Fetching %s…", name)
 			urllib.request.urlretrieve(url, os.path.join("root/src", name))
-	logger.info("Now calling build-sysroot.py. See ya later!")
-	args = ["python"+_suffix, "build-sysroot.py", "--build", "python", "pyqt5", "sip", "--sysroot=root"]
-	if _WIN32:
-		args.remove("python")
-		args.append("--use-system-python=3.6")
-	subprocess.call(args)
-	logger.info("Now running pyqtdeploy. Later holmes!")
+	# download modules
 	if rewindModules:
 		if os.path.exists("modules"):
 			logger.info("Deleting modules directory…")
 			shutil.rmtree("modules")
 		logger.info("Creating modules directory…")
 		os.mkdir("modules")
-		subprocess.call(["pip"+_suffix, "download"])
+		subprocess.check_call(["pip"+_suffix, "download"])
 		with open("trufont/requirements.txt") as requirements:
 			for req in requirements.lines():
 				if req.beginswith("pyqt5"):
 					continue
 				logger.info("Fetching %s (%s)…", *req.split("=="))
-				subprocess.call(["pip", "download", "--dest", "modules", req])
-	subprocess.call(["pyqtdeploycli", "--verbose", "--output", "dist", "--project", "TruFont.pdy", "--sysroot=root", "build"])
+				subprocess.check_call(["pip", "download", "--dest", "modules", req])
+	# go
+	logger.info("Now calling build-sysroot.py. See ya later!")
+	args = ["python"+_suffix, "build-sysroot.py", "--build", "python", "pyqt5", "sip", "--sysroot=root"]
+	if _WIN32:
+		args.remove("python")
+		args.append("--use-system-python=3.6")
+	subprocess.check_call(args)
+	logger.info("Now running pyqtdeploy. Later holmes!")
+	subprocess.check_call(["pyqtdeploycli", "--verbose", "--output", "dist", "--project", "TruFont.pdy", "--sysroot=root", "build"])
 	logger.info("Now running qmake. Almost there!")
-	os.chdir("path")
-	subprocess.call(["qmake"])
+	os.chdir("dist")
+	subprocess.check_call(["qmake"])
 
 
 if __name__ == "__main__":

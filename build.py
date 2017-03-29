@@ -21,8 +21,8 @@ PACKAGES = [
 if not _WIN32:
 	PACKAGES.append(r"https://www.python.org/ftp/python/3.6.1/Python-3.6.1.tgz")
 
-rewind = True
-rewindModules = True
+rewind = rewindModules = True
+
 
 def main():
 	# barriers
@@ -92,4 +92,5 @@ def main():
 
 
 if __name__ == "__main__":
+	logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 	main()

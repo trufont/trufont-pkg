@@ -10,6 +10,7 @@ logger = logging.getLogger(__name__)
 _WIN32 = sys.platform == "win32"
 _ext = "zip" if _WIN32 else "tar.gz"
 _min = (3, 6, 1) if _WIN32 else (3, 5)
+_prefix = "n" if _WIN32 else ""
 _suffix = "" if _WIN32 else "3"
 
 PACKAGES = [
@@ -87,6 +88,8 @@ def main():
 	logger.info("Now running qmake. Almost there!")
 	os.chdir("dist")
 	subprocess.check_call(["qmake"])
+	logger.info("Now running make. Hang on…")
+	subprocess.check_call([_prefix+"make"])
 
 
 if __name__ == "__main__":

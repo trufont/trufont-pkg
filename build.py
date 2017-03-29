@@ -11,7 +11,6 @@ _WIN32 = sys.platform == "win32"
 _ext = "zip" if _WIN32 else "tar.gz"
 _min = (3, 6, 1) if _WIN32 else (3, 5)
 _prefix = "n" if _WIN32 else ""
-_suffix = "" if _WIN32 else "3"
 
 PACKAGES = [
 	r"https://sourceforge.net/projects/pyqt/files/PyQt5/PyQt-5.8.1/PyQt5_gpl-5.8.1.%s/download" % _ext,
@@ -67,6 +66,7 @@ def main():
 		del args[3]
 		args.append("--use-system-python=3.6")
 	subprocess.check_call(args)
+	sysroot = os.path.join(os.getcwd(), "root")
 	targetPython = os.path.join(sysroot, "bin/python")
 	# download modules with the interpreter we built
 	if rewindModules:
@@ -85,7 +85,7 @@ def main():
 	# run pyqtdeploy
 	logger.info("Now running pyqtdeploy. Later holmes!")
 	env = dict(os.environ)
-	env["SYSROOT"] = os.path.join(os.getcwd(), "root")
+	env["SYSROOT"] = sysroot
 	subprocess.check_call(["pyqtdeploycli", "--verbose", "--output", "dist", "--project", "TruFont.pdy", "build"], env=env)
 	logger.info("Now running qmake. Almost there!")
 	os.chdir("dist")

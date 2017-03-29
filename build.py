@@ -10,6 +10,7 @@ logger = logging.getLogger(__name__)
 _WIN32 = sys.platform == "win32"
 _ext = "zip" if _WIN32 else "tar.gz"
 _min = (3, 6, 1) if _WIN32 else (3, 5)
+_suffix = "" if _WIN32 else "3"
 
 PACKAGES = [
 	r"https://sourceforge.net/projects/pyqt/files/PyQt5/PyQt-5.8.1/PyQt5_gpl-5.8.1.%s/download" % _ext,
@@ -20,6 +21,7 @@ if not _WIN32:
 	PACKAGES.append(r"https://www.python.org/ftp/python/3.6.1/Python-3.6.1.tgz")
 
 rewind = False
+rewindModules = False
 
 def main():
 	# barriers
@@ -58,15 +60,25 @@ def main():
 			logger.info("Fetching %s…", name)
 			urllib.request.urlretrieve(url, os.path.join("root/src", name))
 	logger.info("Now calling build-sysroot.py. See ya later!")
-	args = ["python3", "build-sysroot.py", "--build", "python", "pyqt5", "sip", "--sysroot=root"]
+	args = ["python"+_suffix, "build-sysroot.py", "--build", "python", "pyqt5", "sip", "--sysroot=root"]
 	if _WIN32:
 		args.remove("python")
 		args.append("--use-system-python=3.6")
 	subprocess.call(args)
 	logger.info("Now running pyqtdeploy. Later holmes!")
-	#if os.path.exists("modules"):
-	#	shutil.rmtree("modules")
-	#os.mkdir("modules")
+	if rewindModules:
+		if os.path.exists("modules"):
+			logger.info("Deleting modules directory…")
+			shutil.rmtree("modules")
+		logger.info("Creating modules directory…")
+		os.mkdir("modules")
+		subprocess.call(["pip"+_suffix, "download"])
+		with open("trufont/requirements.txt") as requirements:
+			for req in requirements.lines():
+				if req.beginswith("pyqt5"):
+					continue
+				logger.info("Fetching %s (%s)…", *req.split("=="))
+				subprocess.call(["pip", "download", "--dest", "modules", req])
 	subprocess.call(["pyqtdeploycli", "--verbose", "--output", "dist", "--project", "TruFont.pdy", "--sysroot=root", "build"])
 	logger.info("Now running qmake. Almost there!")
 	os.chdir("path")

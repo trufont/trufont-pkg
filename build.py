@@ -54,7 +54,7 @@ def main():
 			name = names[-1]
 			if not name.endswith("z"):
 				name = names[-2]
-				assert name.endswith("z")
+				assert name.endswith("z") or name.endswith("zip")
 			# HACK: build-sysroot.py doesn't like .tgz
 			if name.endswith(".tgz"):
 				name = name.replace(".tgz", ".tar.gz")
@@ -67,13 +67,12 @@ def main():
 			shutil.rmtree("modules")
 		logger.info("Creating modules directory…")
 		os.mkdir("modules")
-		subprocess.check_call(["pip"+_suffix, "download"])
 		with open("trufont/requirements.txt") as requirements:
 			for req in requirements.readlines():
 				if req.startswith("pyqt5"):
 					continue
 				logger.info("Fetching %s (%s)…", *req.split("=="))
-				subprocess.check_call(["pip", "install", "--target", "modules", req])
+				subprocess.check_call(["pip"+_suffix, "install", "--no-deps", "--target", "modules", req])
 	# go
 	logger.info("Now calling build-sysroot.py. See ya later!")
 	args = ["python"+_suffix, "build-sysroot.py", "--build", "python", "pyqt5", "sip", "--sysroot=root"]

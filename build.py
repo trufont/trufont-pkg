@@ -20,8 +20,8 @@ PACKAGES = [
 if not _WIN32:
 	PACKAGES.append(r"https://www.python.org/ftp/python/3.6.1/Python-3.6.1.tgz")
 
-rewind = True
-rewindModules = True
+rewind = False
+rewindModules = False
 
 def main():
 	# barriers
@@ -56,7 +56,7 @@ def main():
 				assert name.endswith("z")
 			# HACK: build-sysroot.py doesn't like .tgz
 			if name.endswith(".tgz"):
-				name.replace(".tgz", ".tar.gz")
+				name = name.replace(".tgz", ".tar.gz")
 			logger.info("Fetching %s…", name)
 			urllib.request.urlretrieve(url, os.path.join("root/src", name))
 	# download modules

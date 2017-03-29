@@ -1,35 +1,41 @@
+import logging
 import os
 import shutil
 import subprocess
 import sys
 import urllib.request
 
-_WIN32 = sys.platform == "win32"
+logger = logging.getLogger(__name__)
 
-if _WIN32:
-	PACKAGES = [
-		r"https://sourceforge.net/projects/pyqt/files/PyQt5/PyQt-5.8.1/PyQt5_gpl-5.8.1.zip/download",
-		r"https://sourceforge.net/projects/pyqt/files/sip/sip-4.19.1/sip-4.19.1.zip/download",
-		# use system python
-	]
-else:
-	PACKAGES = [
-		r"https://sourceforge.net/projects/pyqt/files/PyQt5/PyQt-5.8.1/PyQt5_gpl-5.8.1.tar.gz/download",
-		r"https://sourceforge.net/projects/pyqt/files/sip/sip-4.19.1/sip-4.19.1.tar.gz/download",
-		r"https://www.python.org/ftp/python/3.6.1/Python-3.6.1.tgz",
-	]
+_WIN32 = sys.platform == "win32"
+_ext = "zip" if _WIN32 else "tar.gz"
+_min = (3, 6, 1) if _WIN32 else (3, 5)
+
+PACKAGES = [
+	r"https://sourceforge.net/projects/pyqt/files/PyQt5/PyQt-5.8.1/PyQt5_gpl-5.8.1.%s/download" % _ext,
+	r"https://sourceforge.net/projects/pyqt/files/sip/sip-4.19.1/sip-4.19.1.%s/download" % _ext,
+	# use system python
+]
+if not _WIN32:
+	PACKAGES.append(r"https://www.python.org/ftp/python/3.6.1/Python-3.6.1.tgz")
 
 rewind = False
 
 def main():
-	if sys.version_info < (3, 5):
-		raise NotImplementedError("Python 3.5+ is required to build TruFont.")
+	if not sys.maxsize > 2**32:
+		raise NotImplementedError("A 64-bit Python build is required to build TruFont.")
+	if sys.version_info < _min:
+		raise NotImplementedError("Python {}+ is required to build TruFont.".format(".".join(_min)))
+	try:
+		import pyqtdeploy
+	except ImportError:
+		raise NotImplementedError("pyqtdeploy is required to build TruFont.")
 	if rewind:
 		if os.path.exists("root"):
-			print("Deleting root directory...")
+			logger.info("Deleting root directory…")
 			shutil.rmtree("root")
 		for path in ("root", "root/src"):
-			print("Creating", path, "directory...")
+			logger.info("Creating %s directory…", path)
 			os.mkdir(path)
 		for url in PACKAGES:
 			names = url.rsplit("/", 2)
@@ -40,12 +46,13 @@ def main():
 			# HACK: build-sysroot.py doesn't like .tgz
 			if name.endswith(".tgz"):
 				name.replace(".tgz", ".tar.gz")
-			print("Fetching", name + "...")
+			logger.info("Fetching %s…", name)
 			urllib.request.urlretrieve(url, os.path.join("root/src", name))
-	print("Now calling build-sysroot.py. See ya later!")
+	logger.info("Now calling build-sysroot.py. See ya later!")
 	args = ["python3", "build-sysroot.py", "--build", "python", "pyqt5", "sip", "--sysroot=root"]
 	if _WIN32:
 		args.remove("python")
+		args.append("--use-system-python=3.6")
 	subprocess.call(args)
 
 

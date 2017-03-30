@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 _WIN32 = sys.platform == "win32"
 _ext = "zip" if _WIN32 else "tar.gz"
 _min = (3, 6, 1) if _WIN32 else (3, 5)
-_prefix = "n" if _WIN32 else ""
+_make = "nmake" if _WIN32 else "make"
 
 PACKAGES = [
     r"https://sourceforge.net/projects/pyqt/files/PyQt5/PyQt-5.8.1/PyQt5_gpl-5.8.1.%s/download" % _ext,
@@ -20,7 +20,7 @@ PACKAGES = [
 if not _WIN32:
     PACKAGES.append(r"https://www.python.org/ftp/python/3.6.1/Python-3.6.1.tgz")
 
-rewind = rewindModules = True
+rewind = rewindSysroot = rewindModules = True
 
 
 def main():
@@ -40,6 +40,9 @@ def main():
     version = subprocess.check_output([qmake, "-v"])
     if b"Qt version 5.8" not in version:
         raise NotImplementedError("Qt 5.8 is required to build TruFont.")
+    make = shutil.which(_make)
+    if make is None:
+        raise NotImplementedError(_make+" is required to build TruFont.")
     # download build libs
     if rewind:
         if os.path.exists("root"):
@@ -60,14 +63,16 @@ def main():
             logger.info("Fetching %s…", name)
             urllib.request.urlretrieve(url, os.path.join("root/src", name))
     # build the sysroot
-    logger.info("Now calling build-sysroot.py. See ya later!")
-    args = [sys.executable, "build-sysroot.py", "--build", "python", "pyqt5", "sip", "--enable-dynamic-loading", "--sysroot=root"]
-    if _WIN32:
-        del args[3]
-        args.append("--use-system-python=3.6")
-    subprocess.check_call(args)
+    if rewindSysroot:
+        logger.info("Now calling build-sysroot.py. See ya later!")
+        args = [sys.executable, "build-sysroot.py", "--build", "python", "pyqt5", "sip", "--enable-dynamic-loading", "--sysroot=root"]
+        if _WIN32:
+            del args[3]
+            args.append("--use-system-python=3.6")
+        subprocess.check_call(args)
     sysroot = os.path.join(os.getcwd(), "root")
     targetPython = os.path.join(sysroot, "bin/python")
+    assert os.path.exists(targetPython)
     # download modules with the interpreter we built
     if rewindModules:
         if os.path.exists("modules"):
@@ -87,12 +92,12 @@ def main():
     env = dict(os.environ)
     env["SYSROOT"] = sysroot
     subprocess.check_call(["pyqtdeploycli", "--verbose", "--output", "dist", "--project", "TruFont.pdy", "build"], env=env)
-    logger.info("Now running qmake. Almost there!")
-    os.chdir("dist")
     # finish with qmake and make
+    os.chdir("dist")
+    logger.info("Now running qmake. Almost there!")
     subprocess.check_call(["qmake"])
-    logger.info("Now running make. Hang on…")
-    subprocess.check_call([_prefix+"make"])
+    logger.info("Now running %s. Hang on…", _make)
+    subprocess.check_call([_make])
 
 
 if __name__ == "__main__":

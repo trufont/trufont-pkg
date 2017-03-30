@@ -74,7 +74,7 @@ def main():
             args.append("--use-system-python=3.6")
         subprocess.check_call(args)
     sysroot = os.path.join(os.getcwd(), "root")
-    targetPython = os.path.join(sysroot, "bin", "python" + ".exe" if _WIN32 else "")
+    targetPython = os.path.join(sysroot, "bin", "python" + (".exe" if _WIN32 else ""))
     assert os.path.exists(targetPython)
     # download modules with the interpreter we built
     if rewindModules:

@@ -34,14 +34,14 @@ def main():
     except ImportError:
         raise NotImplementedError("pyqtdeploy is required to build TruFont.")
     qmake = shutil.which("qmake")
-    if qmake is None:
+    if qmake is None or not os.path.exists(qmake):
         # TODO: we could build as part of this script
         raise NotImplementedError("qmake is required to build TruFont. Add Qt bin/ directory to PATH!")
     version = subprocess.check_output([qmake, "-v"])
     if b"Qt version 5.8" not in version:
         raise NotImplementedError("Qt 5.8 is required to build TruFont.")
     make = shutil.which(_make)
-    if make is None:
+    if make is None or not os.path.exists(make):
         raise NotImplementedError(_make+" is required to build TruFont.")
     # download build libs
     if rewind:

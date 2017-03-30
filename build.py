@@ -1,9 +1,11 @@
+import glob
 import logging
 import os
 import shutil
 import subprocess
 import sys
 import urllib.request
+import zipfile
 
 logger = logging.getLogger(__name__)
 
@@ -93,10 +95,22 @@ def main():
     subprocess.check_call(["pyqtdeploycli", "--verbose", "--output", "dist", "--project", "TruFont.pdy", "build"], env=env)
     # finish with qmake and make
     os.chdir("dist")
-    logger.info("Now running qmake. Almost there!")
+    logger.info("Now running qmake. We’re getting close!")
     subprocess.check_call(["qmake"])
     logger.info("Now running %s. Hang on…", _make)
     subprocess.check_call([_make])
+    os.chdir("..")
+    # bundle
+    logger.info("Making a zip file…")
+    pyclipper = glob.glob("modules/pyclipper*.so")  # TODO: DLL
+    if os.path.exists("TruFont.zip"):
+        logger.info("Deleting existing TruFont.zip…")
+        os.remove("TruFont.zip")
+    with zipfile.ZipFile("TruFont.zip", 'w') as archive:
+        archive.write("dist/TruFont", arcname="TruFont.run")
+        if pyclipper:
+            archive.write(pyclipper[0], arcname="pyclipper.so")
+    logger.info("DONE!")
 
 
 if __name__ == "__main__":

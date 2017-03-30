@@ -323,6 +323,17 @@ class Host:
         return os.path.join(self.sysroot.bin_dir, self.exe('sip'))
 
 
+def inside_venv():
+    """Return True if running inside a virtual environment."""
+    if hasattr(sys, 'real_prefix'):
+        # virtualenv
+        return True
+    elif hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix:
+        # python3 -m venv
+        return True
+    return False
+
+
 class WindowsHost(Host):
     """ The class that encapsulates a Windows host platform. """
 
@@ -345,7 +356,13 @@ class WindowsHost(Host):
 
         # We assume that the same Python being used to execute this script can
         # also run pyqtdeploycli.
-        return os.path.join(os.path.dirname(sys.executable), 'Scripts',
+        if inside_venv():
+            # inside a virtual environment, python.exe is in the same "Scripts"
+            # folder as pyqtdeploycli.exe
+            scripts = ''
+        else:
+            scripts = 'Scripts'
+        return os.path.join(os.path.dirname(sys.executable), scripts,
                 'pyqtdeploycli')
 
 
@@ -1050,7 +1067,7 @@ if args.clean:
 # We build the host Python as soon as possble as that is where we get the host
 # platform from.
 if 'python' in packages:
-    build_host_python(host, args.all, args.target, args.use_system_python)
+    build_host_python(host, args.target, args.all, args.use_system_python)
 else:
     host.python.get_configuration(host.interpreter)
 

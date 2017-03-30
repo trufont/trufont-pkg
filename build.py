@@ -85,7 +85,6 @@ def main():
             for req in requirements.readlines():
                 if req.startswith("pyqt5"):
                     continue
-                logger.info("Fetching %s (%s)…", *req.split("=="))
                 subprocess.check_call([targetPython, "-m", "pip", "install", "--target", "modules", req])
     # run pyqtdeploy
     logger.info("Now running pyqtdeploy. Later holmes!")

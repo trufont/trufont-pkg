@@ -10,6 +10,7 @@ import zipfile
 logger = logging.getLogger(__name__)
 
 _WIN32 = sys.platform == "win32"
+_MACOS = sys.platform == "darwin"
 _ext = "zip" if _WIN32 else "tar.gz"
 _min = (3, 6, 1) if _WIN32 else (3, 5)
 _make = "nmake" if _WIN32 else "make"
@@ -69,11 +70,11 @@ def main():
         logger.info("Now calling build-sysroot.py. See ya later!")
         args = [sys.executable, "build-sysroot.py", "--build", "python", "pyqt5", "sip", "--enable-dynamic-loading", "--sysroot=root"]
         if _WIN32:
-            del args[3]
+            args.remove("--enable-dynamic-loading")
             args.append("--use-system-python=3.6")
         subprocess.check_call(args)
     sysroot = os.path.join(os.getcwd(), "root")
-    targetPython = os.path.join(sysroot, "bin/python")
+    targetPython = os.path.join(sysroot, "bin", "python" + (".exe" if _WIN32 else ""))
     assert os.path.exists(targetPython)
     # download modules with the interpreter we built
     if rewindModules:
@@ -100,17 +101,18 @@ def main():
     logger.info("Now running %s. Hang on…", _make)
     subprocess.check_call([_make])
     os.chdir("..")
-    # bundle
-    logger.info("Making a zip file…")
-    pyclipper = glob.glob("modules/pyclipper*.so")  # TODO: DLL
-    if os.path.exists("TruFont.zip"):
-        logger.info("Deleting existing TruFont.zip…")
-        os.remove("TruFont.zip")
-    with zipfile.ZipFile("TruFont.zip", 'w') as archive:
-        archive.write("dist/TruFont", arcname="TruFont.run")
-        if pyclipper:
-            archive.write(pyclipper[0], arcname="pyclipper.so")
-    logger.info("DONE!")
+    if not (_WIN32 or _MACOS):
+        # bundle
+        logger.info("Making a zip file…")
+        pyclipper = glob.glob("modules/pyclipper*.so")  # TODO: DLL
+        if os.path.exists("TruFont.zip"):
+            logger.info("Deleting existing TruFont.zip…")
+            os.remove("TruFont.zip")
+        with zipfile.ZipFile("TruFont.zip", 'w') as archive:
+            archive.write("dist/TruFont", arcname="TruFont.run")
+            if pyclipper:
+                archive.write(pyclipper[0], arcname="pyclipper.so")
+        logger.info("DONE!")
 
 
 if __name__ == "__main__":
